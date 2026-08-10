@@ -1,0 +1,5 @@
+@import "tailwindcss";
+
+/* ручной тёмный режим через класс .dark на <html>,
+   а не через системный prefers-color-scheme */
+@custom-variant dark (&:where(.dark, .dark *));
