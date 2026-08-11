@@ -3,8 +3,11 @@ import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+const isCloudflare = !!process.env.CF_PAGES
+const base = isCloudflare ? '/' : '/goal-tree-planner/'
+
 export default defineConfig({
-  base: '/goal-tree-planner/',
+  base,
   plugins: [
     vue(),
     tailwindcss(),
@@ -15,8 +18,8 @@ export default defineConfig({
         name: 'Goal Tree Planner',
         short_name: 'Goal Tree',
         description: 'Декомпозиция целей на шаги и чек-листы в виде дерева',
-        start_url: '/goal-tree-planner/',
-        scope: '/goal-tree-planner/',
+        start_url: base,
+        scope: base,
         display: 'standalone',
         background_color: '#F2F3EE',
         theme_color: '#3F7859',
