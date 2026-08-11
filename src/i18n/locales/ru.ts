@@ -43,6 +43,9 @@ export default {
   stepNode: {
     addChild: 'Добавить подшаг',
     newStep: 'Новый шаг',
+    menuOpen: 'Открыть',
+    menuAddChild: 'Добавить подшаг',
+    menuMarkDone: 'Отметить выполненным',
   },
   backup: {
     confirmReplace: 'Заменить текущие данные импортированными? Отмена = объединить с текущими.',

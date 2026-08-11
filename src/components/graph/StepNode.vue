@@ -10,6 +10,7 @@ interface StepNodeData {
   isRoot?: boolean
   onOpen: () => void
   onAddChild: () => void
+  onContextMenu?: (x: number, y: number) => void
 }
 
 const props = defineProps<NodeProps<StepNodeData>>()
@@ -20,13 +21,55 @@ const statusDot: Record<string, string> = {
   in_progress: 'bg-ochre',
   done: 'bg-moss',
 }
+
+// правый клик на десктопе
+function handleContextMenu(event: MouseEvent) {
+  if (!props.data.onContextMenu) return
+  event.preventDefault()
+  props.data.onContextMenu(event.clientX, event.clientY)
+}
+
+// на тач-экранах большинство браузеров тоже шлют contextmenu по долгому нажатию,
+// но держим свой таймер как резерв на случай если конкретный браузер этого не делает
+let pressTimer: ReturnType<typeof setTimeout> | null = null
+let longPressFired = false
+
+function handlePointerDown(event: PointerEvent) {
+  if (event.pointerType !== 'touch' || !props.data.onContextMenu) return
+  if ((event.target as HTMLElement).closest('button')) return
+  longPressFired = false
+  pressTimer = setTimeout(() => {
+    longPressFired = true
+    props.data.onContextMenu?.(event.clientX, event.clientY)
+  }, 500)
+}
+
+function cancelPress() {
+  if (pressTimer) clearTimeout(pressTimer)
+  pressTimer = null
+}
+
+function handleClick() {
+  // после долгого нажатия гасим последующий клик - иначе на закрытие меню
+  // среагирует ещё и обычное открытие модалки
+  if (longPressFired) {
+    longPressFired = false
+    return
+  }
+  props.data.onOpen()
+}
 </script>
 
 <template>
   <div
-    class="relative rounded-2xl border bg-white dark:bg-dusk-dim shadow-sm hover:shadow-md transition-shadow px-4 py-3 flex items-center gap-3 cursor-pointer"
+    class="relative rounded-2xl border bg-white dark:bg-dusk-dim shadow-sm hover:shadow-md hover:border-moss/40 transition-all px-4 py-3 flex items-center gap-3 cursor-pointer select-none"
     :class="props.data.isRoot ? 'border-ink/30 dark:border-paper/30 min-w-[220px]' : 'border-sage/25 min-w-[200px]'"
-    @click="props.data.onOpen"
+    @click="handleClick"
+    @contextmenu="handleContextMenu"
+    @pointerdown="handlePointerDown"
+    @pointerup="cancelPress"
+    @pointermove="cancelPress"
+    @pointerleave="cancelPress"
   >
     <Handle type="target" :position="Position.Top" class="!bg-sage !w-2 !h-2 !border-0" />
 
@@ -43,7 +86,7 @@ const statusDot: Record<string, string> = {
     <button
       type="button"
       :aria-label="t('stepNode.addChild')"
-      class="shrink-0 h-8 w-8 rounded-full bg-moss/90 text-paper flex items-center justify-center text-sm hover:bg-moss active:scale-95 transition"
+      class="shrink-0 h-8 w-8 rounded-full bg-moss/90 text-paper flex items-center justify-center text-sm hover:bg-moss hover:scale-110 active:scale-95 transition"
       @click.stop="props.data.onAddChild"
     >
       +

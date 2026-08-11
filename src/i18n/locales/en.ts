@@ -43,6 +43,9 @@ export default {
   stepNode: {
     addChild: 'Add substep',
     newStep: 'New step',
+    menuOpen: 'Open',
+    menuAddChild: 'Add substep',
+    menuMarkDone: 'Mark as done',
   },
   backup: {
     confirmReplace: 'Replace current data with the imported file? Cancel = merge with current data.',
