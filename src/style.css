@@ -1,5 +1,25 @@
 @import "tailwindcss";
-
-/* ручной тёмный режим через класс .dark на <html>,
-   а не через системный prefers-color-scheme */
 @custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-display: "Fraunces", ui-serif, serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-paper: #F2F3EE;
+  --color-paper-dim: #E7E9E2;
+  --color-dusk: #0E1512;
+  --color-dusk-dim: #161F1A;
+  --color-ink: #1C2420;
+  --color-moss: #3F7859;
+  --color-moss-soft: #DCEAE1;
+  --color-ochre: #C98A3E;
+  --color-ochre-soft: #F5E6D0;
+  --color-sage: #8FA396;
+
+  --color-moss-dark: #2F5C43;
+}
+
+body {
+  font-family: var(--font-sans);
+}

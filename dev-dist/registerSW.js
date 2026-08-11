@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) navigator.serviceWorker.register('/goal-tree-planner/dev-sw.js?dev-sw', { scope: '/goal-tree-planner/', type: 'classic' })
