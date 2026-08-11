@@ -3,6 +3,7 @@ import { onMounted } from 'vue'
 import { useGoalsStore } from './stores/goals'
 import AppHeader from './components/AppHeader.vue'
 import InstallPwaButton from './components/InstallPwaButton.vue'
+import ConfirmDialog from './components/ConfirmDialog.vue'
 
 const goalsStore = useGoalsStore()
 
@@ -18,5 +19,6 @@ onMounted(() => {
       <router-view />
     </main>
     <InstallPwaButton />
+    <ConfirmDialog />
   </div>
 </template>

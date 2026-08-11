@@ -2,15 +2,14 @@ export default {
   header: {
     title: 'Goal Tree',
   },
-  goalsList: {
-    title: 'Мои цели',
-    addGoal: '+ Добавить цель',
-    export: 'Экспорт',
-    import: 'Импорт',
-    empty: 'Пока нет ни одной цели — самое время добавить первую.',
+    common: {
+    confirm: 'Подтвердить',
+    cancel: 'Отмена',
+    ok: 'Понятно',
   },
   goalForm: {
     title: 'Новая цель',
+    editTitle: 'Редактировать цель',
     name: 'Название',
     namePlaceholder: 'Например, выучить испанский',
     description: 'Описание',
@@ -18,7 +17,27 @@ export default {
     descriptionPlaceholder: 'Пара слов о том, зачем эта цель',
     color: 'Цвет ветки',
     submit: 'Создать цель',
+    save: 'Сохранить',
   },
+  goalsList: {
+    title: 'Мои цели',
+    addGoal: '+ Добавить цель',
+    export: 'Экспорт',
+    import: 'Импорт',
+    searchPlaceholder: 'Поиск по названию...',
+    filterActive: 'Активные',
+    filterArchived: 'Архив',
+    empty: 'Пока нет ни одной цели — самое время добавить первую.',
+    emptyArchived: 'В архиве пока пусто.',
+    emptySearch: 'Ничего не найдено.',
+    menuOpen: 'Открыть',
+    menuEdit: 'Редактировать',
+    menuArchive: 'В архив',
+    menuUnarchive: 'Вернуть из архива',
+    menuDelete: 'Удалить',
+    confirmDeleteTitle: 'Удалить цель',
+    confirmDelete: 'Удалить цель «{title}»? Все шаги и тудушки внутри неё пропадут без возможности восстановления.',
+  },  
   goalCanvas: {
     back: '← Все цели',
     notFound: 'Цель не найдена.',
@@ -48,7 +67,9 @@ export default {
     menuMarkDone: 'Отметить выполненным',
   },
   backup: {
+    confirmReplaceTitle: 'Импорт бэкапа',
     confirmReplace: 'Заменить текущие данные импортированными? Отмена = объединить с текущими.',
+    importErrorTitle: 'Ошибка импорта',
     importError: 'Не удалось прочитать файл — убедись, что это JSON-бэкап, скачанный отсюда же.',
   },
     pwa: {

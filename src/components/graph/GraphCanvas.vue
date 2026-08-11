@@ -12,12 +12,18 @@ import { findStepById } from '../../utils/tree'
 import StepNode from './StepNode.vue'
 import ContextMenu, { type MenuItem } from '../ContextMenu.vue'
 
+import { confirmDialog } from '../../composables/useConfirm'
+
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
 import '@vue-flow/controls/dist/style.css'
 
 const props = defineProps<{ goal: Goal }>()
-const emit = defineEmits<{ 'open-step': [stepId: string | null] }>()
+const emit = defineEmits<{
+  'open-step': [stepId: string]
+  'edit-goal': []
+  'goal-deleted': []
+}>()
 
 const goalsStore = useGoalsStore()
 const { t } = useI18n()
@@ -27,15 +33,12 @@ function flattenSteps(steps: Step[]): Step[] {
   return steps.flatMap(s => [s, ...flattenSteps(s.children)])
 }
 
-const menuState = ref<{ visible: boolean; x: number; y: number; stepId: string | null }>({
-  visible: false,
-  x: 0,
-  y: 0,
-  stepId: null,
+const menuState = ref<{ visible: boolean; x: number; y: number; targetId: string | null; isGoal: boolean }>({
+  visible: false, x: 0, y: 0, targetId: null, isGoal: false,
 })
 
-function openContextMenu(stepId: string, x: number, y: number) {
-  menuState.value = { visible: true, x, y, stepId }
+function openContextMenu(targetId: string, x: number, y: number, isGoal = false) {
+  menuState.value = { visible: true, x, y, targetId, isGoal }
 }
 
 function closeContextMenu() {
@@ -43,11 +46,35 @@ function closeContextMenu() {
 }
 
 const activeStep = computed(() => {
-  if (!menuState.value.stepId) return null
-  return findStepById(props.goal.steps, menuState.value.stepId)
+  if (menuState.value.isGoal || !menuState.value.targetId) return null
+  return findStepById(props.goal.steps, menuState.value.targetId)
 })
 
-const contextMenuItems = computed(() => {
+const contextMenuItems = computed<MenuItem[]>(() => {
+  if (menuState.value.isGoal) {
+    return [
+      { label: t('goalsList.menuEdit'), onClick: () => emit('edit-goal') },
+      {
+        label: props.goal.status === 'archived' ? t('goalsList.menuUnarchive') : t('goalsList.menuArchive'),
+        onClick: () => goalsStore.setGoalStatus(props.goal.id, props.goal.status === 'archived' ? 'active' : 'archived'),
+      },
+      {
+        label: t('goalsList.menuDelete'),
+        danger: true,
+        onClick: async () => {
+          const ok = await confirmDialog({
+            title: t('goalsList.confirmDeleteTitle'),
+            message: t('goalsList.confirmDelete', { title: props.goal.title }),
+            danger: true,
+          })
+          if (!ok) return
+          goalsStore.deleteGoal(props.goal.id)
+          emit('goal-deleted')
+        },
+      },
+    ]
+  }
+
   const step = activeStep.value
   if (!step) return []
 
@@ -66,11 +93,12 @@ const contextMenuItems = computed(() => {
   items.push({
     label: step.children.length ? t('stepModal.deleteStepWithChildren') : t('stepModal.deleteStep'),
     danger: true,
-    onClick: () => {
+    onClick: async () => {
       const message = step.children.length
         ? t('stepModal.confirmDeleteStepWithChildren', { title: step.title })
         : t('stepModal.confirmDeleteStep', { title: step.title })
-      if (!confirm(message)) return
+      const ok = await confirmDialog({ title: t('stepModal.deleteStep'), message, danger: true })
+      if (!ok) return
       goalsStore.deleteStep(props.goal.id, step.id)
     },
   })
@@ -92,8 +120,9 @@ const nodes = computed(() => {
       progress: getGoalProgress(props.goal),
       status: 'in_progress' as const,
       isRoot: true,
-      onOpen: () => emit('open-step', null),
+      onOpen: () => emit('edit-goal'),
       onAddChild: () => goalsStore.addStep(props.goal.id, t('stepNode.newStep')),
+      onContextMenu: (x: number, y: number) => openContextMenu(props.goal.id, x, y, true),
     },
   }
 

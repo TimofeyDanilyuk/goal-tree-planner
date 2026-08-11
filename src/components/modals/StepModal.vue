@@ -5,6 +5,7 @@ import { useGoalsStore } from '../../stores/goals'
 import { findStepById } from '../../utils/tree'
 import { getStepProgress } from '../../utils/progress'
 import GrowthRing from '../GrowthRing.vue'
+import { confirmDialog } from '../../composables/useConfirm'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
@@ -72,12 +73,13 @@ function markDone() {
   goalsStore.updateStep(props.goalId, step.value.id, { status: 'done' })
 }
 
-function deleteStep() {
+async function deleteStep() {
   if (!step.value) return
   const message = step.value.children.length > 0
     ? t('stepModal.confirmDeleteStepWithChildren', { title: step.value.title })
     : t('stepModal.confirmDeleteStep', { title: step.value.title })
-  if (!confirm(message)) return
+  const ok = await confirmDialog({ title: t('stepModal.deleteStep'), message, danger: true })
+  if (!ok) return
   goalsStore.deleteStep(props.goalId, step.value.id)
   emit('close')
 }

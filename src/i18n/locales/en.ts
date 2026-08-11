@@ -2,15 +2,14 @@ export default {
   header: {
     title: 'Goal Tree',
   },
-  goalsList: {
-    title: 'My Goals',
-    addGoal: '+ Add Goal',
-    export: 'Export',
-    import: 'Import',
-    empty: 'No goals yet — this is a good time to add your first one.',
+    common: {
+    confirm: 'Confirm',
+    cancel: 'Cancel',
+    ok: 'Got it',
   },
   goalForm: {
     title: 'New Goal',
+    editTitle: 'Edit Goal',
     name: 'Title',
     namePlaceholder: 'e.g. Learn Spanish',
     description: 'Description',
@@ -18,6 +17,26 @@ export default {
     descriptionPlaceholder: 'A few words on why this goal matters',
     color: 'Branch color',
     submit: 'Create Goal',
+    save: 'Save',
+  },
+  goalsList: {
+    title: 'My Goals',
+    addGoal: '+ Add Goal',
+    export: 'Export',
+    import: 'Import',
+    searchPlaceholder: 'Search by title...',
+    filterActive: 'Active',
+    filterArchived: 'Archived',
+    empty: 'No goals yet — this is a good time to add your first one.',
+    emptyArchived: 'The archive is empty.',
+    emptySearch: 'No matches found.',
+    menuOpen: 'Open',
+    menuEdit: 'Edit',
+    menuArchive: 'Archive',
+    menuUnarchive: 'Restore from archive',
+    menuDelete: 'Delete',
+    confirmDeleteTitle: 'Delete goal',
+    confirmDelete: 'Delete goal "{title}"? All its steps and checklist items will be lost permanently.',
   },
   goalCanvas: {
     back: '← All goals',
@@ -48,7 +67,9 @@ export default {
     menuMarkDone: 'Mark as done',
   },
   backup: {
+    confirmReplaceTitle: 'Import backup',
     confirmReplace: 'Replace current data with the imported file? Cancel = merge with current data.',
+    importErrorTitle: 'Import error',
     importError: "Couldn't read the file — make sure it's a JSON backup downloaded from this app.",
   },
     pwa: {

@@ -1,22 +1,130 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useGoalsStore } from '../stores/goals'
 import { getGoalProgress } from '../utils/progress'
+import { confirmDialog, alertDialog } from '../composables/useConfirm'
 import GrowthRing from '../components/GrowthRing.vue'
-import { useI18n } from 'vue-i18n'
 import GoalFormModal from '../components/modals/GoalFormModal.vue'
-
-const { t } = useI18n()
+import ContextMenu, { type MenuItem } from '../components/ContextMenu.vue'
+import type { Goal } from '../types/goal'
 
 const goalsStore = useGoalsStore()
-const goals = computed(() => goalsStore.activeGoals)
+const router = useRouter()
+const { t } = useI18n()
 
+const search = ref('')
+const statusFilter = ref<'active' | 'archived'>('active')
+
+const filteredGoals = computed(() => {
+  const source = statusFilter.value === 'active' ? goalsStore.activeGoals : goalsStore.archivedGoals
+  const query = search.value.trim().toLowerCase()
+  if (!query) return source
+  return source.filter(g => g.title.toLowerCase().includes(query))
+})
+
+const emptyMessage = computed(() => {
+  if (search.value.trim()) return t('goalsList.emptySearch')
+  return statusFilter.value === 'active' ? t('goalsList.empty') : t('goalsList.emptyArchived')
+})
+
+// --- создание / редактирование цели ---
 const isModalOpen = ref(false)
-const fileInput = ref<HTMLInputElement | null>(null)
+const editingGoal = ref<Goal | null>(null)
 
-function handleCreate(payload: { title: string; description: string; color: string }) {
-  goalsStore.addGoal(payload.title, payload.description || undefined, payload.color)
+function openCreateModal() {
+  editingGoal.value = null
+  isModalOpen.value = true
 }
+
+function openEditModal(goal: Goal) {
+  editingGoal.value = goal
+  isModalOpen.value = true
+}
+
+function handleSubmit(payload: { title: string; description: string; color: string }) {
+  if (editingGoal.value) {
+    goalsStore.updateGoal(editingGoal.value.id, {
+      title: payload.title,
+      description: payload.description || undefined,
+      color: payload.color,
+    })
+  } else {
+    goalsStore.addGoal(payload.title, payload.description || undefined, payload.color)
+  }
+}
+
+// --- архивация / удаление ---
+async function toggleArchive(goal: Goal) {
+  goalsStore.setGoalStatus(goal.id, goal.status === 'archived' ? 'active' : 'archived')
+}
+
+async function handleDelete(goal: Goal) {
+  const ok = await confirmDialog({
+    title: t('goalsList.confirmDeleteTitle'),
+    message: t('goalsList.confirmDelete', { title: goal.title }),
+    danger: true,
+  })
+  if (!ok) return
+  goalsStore.deleteGoal(goal.id)
+}
+
+// --- контекстное меню карточки (правый клик / долгий тап) ---
+const menuState = ref<{ visible: boolean; x: number; y: number; goal: Goal | null }>({
+  visible: false, x: 0, y: 0, goal: null,
+})
+
+function openCardMenu(goal: Goal, x: number, y: number) {
+  menuState.value = { visible: true, x, y, goal }
+}
+
+const cardMenuItems = computed<MenuItem[]>(() => {
+  const goal = menuState.value.goal
+  if (!goal) return []
+  return [
+    { label: t('goalsList.menuOpen'), onClick: () => router.push(`/goal/${goal.id}`) },
+    { label: t('goalsList.menuEdit'), onClick: () => openEditModal(goal) },
+    {
+      label: goal.status === 'archived' ? t('goalsList.menuUnarchive') : t('goalsList.menuArchive'),
+      onClick: () => toggleArchive(goal),
+    },
+    { label: t('goalsList.menuDelete'), danger: true, onClick: () => handleDelete(goal) },
+  ]
+})
+
+let pressTimer: ReturnType<typeof setTimeout> | null = null
+let longPressFired = false
+
+function handlePointerDown(event: PointerEvent, goal: Goal) {
+  if (event.pointerType !== 'touch') return
+  longPressFired = false
+  pressTimer = setTimeout(() => {
+    longPressFired = true
+    openCardMenu(goal, event.clientX, event.clientY)
+  }, 500)
+}
+
+function cancelPress() {
+  if (pressTimer) clearTimeout(pressTimer)
+  pressTimer = null
+}
+
+function handleCardClick(goal: Goal) {
+  if (longPressFired) {
+    longPressFired = false
+    return
+  }
+  router.push(`/goal/${goal.id}`)
+}
+
+function handleCardContextMenu(event: MouseEvent, goal: Goal) {
+  event.preventDefault()
+  openCardMenu(goal, event.clientX, event.clientY)
+}
+
+// --- бэкап ---
+const fileInput = ref<HTMLInputElement | null>(null)
 
 async function handleExport() {
   const json = await goalsStore.exportBackup()
@@ -39,23 +147,22 @@ async function handleFileChange(event: Event) {
 
   const text = await file.text()
   const mode = goalsStore.goals.length > 0
-    ? (confirm(t('backup.confirmReplace')) ? 'replace' : 'merge')
+    ? ((await confirmDialog({ title: t('backup.confirmReplaceTitle'), message: t('backup.confirmReplace') })) ? 'replace' : 'merge')
     : 'replace'
 
   try {
     await goalsStore.importBackup(text, mode)
   } catch {
-    alert(t('backup.importError'))
+    await alertDialog(t('backup.importError'), t('backup.importErrorTitle'))
   }
 
-  // сбрасываем value - иначе повторный выбор того же файла не вызовет change
   ;(event.target as HTMLInputElement).value = ''
 }
 </script>
 
 <template>
   <div>
-    <div class="flex items-center justify-between gap-3 mb-8 flex-wrap">
+    <div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
       <h1 class="font-display text-2xl font-semibold text-ink dark:text-paper">
         {{ $t('goalsList.title') }}
       </h1>
@@ -69,22 +176,50 @@ async function handleFileChange(event: Event) {
         </button>
         <input ref="fileInput" type="file" accept="application/json" class="hidden" @change="handleFileChange">
 
-        <button type="button" class="min-h-11 px-4 rounded-full bg-moss text-paper font-medium text-sm hover:bg-moss-dark hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] active:translate-y-0 transition" @click="isModalOpen = true">
+        <button type="button" class="min-h-11 px-4 rounded-full bg-moss text-paper font-medium text-sm hover:bg-moss-dark hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] active:translate-y-0 transition" @click="openCreateModal">
           {{ $t('goalsList.addGoal') }}
         </button>
       </div>
     </div>
 
-    <p v-if="goals.length === 0" class="text-sage">
-      {{ $t('goalsList.empty') }}
+    <div class="flex items-center gap-3 mb-6 flex-wrap">
+      <div class="flex rounded-full border border-sage/25 p-0.5 bg-white dark:bg-dusk-dim">
+        <button
+          type="button" class="h-9 px-3 rounded-full text-sm font-medium transition"
+          :class="statusFilter === 'active' ? 'bg-moss text-paper' : 'text-sage hover:bg-sage/10 hover:text-ink dark:hover:text-paper'"
+          @click="statusFilter = 'active'"
+        >
+          {{ $t('goalsList.filterActive') }}
+        </button>
+        <button
+          type="button" class="h-9 px-3 rounded-full text-sm font-medium transition"
+          :class="statusFilter === 'archived' ? 'bg-moss text-paper' : 'text-sage hover:bg-sage/10 hover:text-ink dark:hover:text-paper'"
+          @click="statusFilter = 'archived'"
+        >
+          {{ $t('goalsList.filterArchived') }}
+        </button>
+      </div>
+
+      <input
+        v-model="search" type="search" :placeholder="$t('goalsList.searchPlaceholder')"
+        class="flex-1 min-w-[180px] h-9 px-3 rounded-full border border-sage/25 bg-white dark:bg-dusk-dim text-sm text-ink dark:text-paper placeholder:text-sage/60 focus:outline-none focus:ring-2 focus:ring-moss"
+      >
+    </div>
+
+    <p v-if="filteredGoals.length === 0" class="text-sage">
+      {{ emptyMessage }}
     </p>
 
     <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      <router-link
-        v-for="goal in goals"
-        :key="goal.id"
-        :to="`/goal/${goal.id}`"
-        class="flex items-start gap-4 p-5 rounded-2xl border border-sage/20 bg-white dark:bg-dusk-dim hover:border-moss/50 hover:shadow-md hover:-translate-y-0.5 transition-all"
+      <div
+        v-for="goal in filteredGoals" :key="goal.id"
+        class="flex items-start gap-4 p-5 rounded-2xl border border-sage/20 bg-white dark:bg-dusk-dim hover:border-moss/50 hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer select-none"
+        @click="handleCardClick(goal)"
+        @contextmenu="handleCardContextMenu($event, goal)"
+        @pointerdown="handlePointerDown($event, goal)"
+        @pointerup="cancelPress"
+        @pointermove="cancelPress"
+        @pointerleave="cancelPress"
       >
         <GrowthRing :progress="getGoalProgress(goal)" :size="44" :stroke-width="3" />
         <div class="min-w-0">
@@ -95,9 +230,22 @@ async function handleFileChange(event: Event) {
             {{ goal.description }}
           </p>
         </div>
-      </router-link>
+      </div>
     </div>
 
-    <GoalFormModal v-model="isModalOpen" @submit="handleCreate" />
+    <GoalFormModal
+      v-model="isModalOpen"
+      :mode="editingGoal ? 'edit' : 'create'"
+      :initial="editingGoal ?? undefined"
+      @submit="handleSubmit"
+    />
+
+    <ContextMenu
+      :visible="menuState.visible"
+      :x="menuState.x"
+      :y="menuState.y"
+      :items="cardMenuItems"
+      @close="menuState.visible = false"
+    />
   </div>
 </template>
