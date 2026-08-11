@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import type { Step } from '../../types/goal'
 import { getStepProgress } from '../../utils/progress'
+import { isOverdue } from '../../utils/dueDate'
 
 defineOptions({ name: 'StepTreeItem' })
 
@@ -43,6 +44,7 @@ const statusDot: Record<string, string> = {
       <button type="button" class="flex-1 flex items-center gap-2 min-h-11 text-left" @click="emit('open', step.id)">
         <span class="h-2 w-2 rounded-full shrink-0" :class="statusDot[step.status]" />
         <span class="flex-1 text-sm text-ink dark:text-paper truncate">{{ step.title }}</span>
+        <span v-if="isOverdue(step.dueDate, step.status === 'done' ? 'done' : undefined)" class="text-xs font-medium text-red-500 shrink-0">{{ $t('stepTree.overdue') }}</span>
         <span class="text-xs text-sage font-mono shrink-0">{{ Math.round(progress * 100) }}%</span>
       </button>
     </div>

@@ -8,6 +8,9 @@ interface StepNodeData {
   progress: number
   status: 'todo' | 'in_progress' | 'done'
   isRoot?: boolean
+  color?: string
+  dueDate?: string
+  overdue?: boolean
   onOpen: () => void
   onAddChild: () => void
   onContextMenu?: (x: number, y: number) => void
@@ -64,6 +67,7 @@ function handleClick() {
   <div
     class="relative rounded-2xl border bg-white dark:bg-dusk-dim shadow-sm hover:shadow-md hover:border-moss/40 transition-all px-4 py-3 flex items-center gap-3 cursor-pointer select-none"
     :class="props.data.isRoot ? 'border-ink/30 dark:border-paper/30 min-w-[220px]' : 'border-sage/25 min-w-[200px]'"
+    :style="props.data.color && !props.data.isRoot ? { borderColor: props.data.color + '55' } : undefined"
     @click="handleClick"
     @contextmenu="handleContextMenu"
     @pointerdown="handlePointerDown"
@@ -73,14 +77,22 @@ function handleClick() {
   >
     <Handle type="target" :position="Position.Top" class="!bg-sage !w-2 !h-2 !border-0" />
 
-    <GrowthRing :progress="props.data.progress" :size="36" :stroke-width="3" :show-label="false" />
+    <GrowthRing :progress="props.data.progress" :size="36" :stroke-width="3" :show-label="false" :color="props.data.color" />
 
     <div class="min-w-0 flex-1">
       <div class="flex items-center gap-1.5">
-        <span v-if="!props.data.isRoot" class="h-1.5 w-1.5 rounded-full shrink-0" :class="statusDot[props.data.status]" />
+        <span v-if="!props.data.isRoot" class="h-1.5 w-1.5 rounded-full shrink-0" :class="statusDot[props.data.status]" :style="props.data.color ? { backgroundColor: props.data.color } : undefined" />
         <span class="font-medium text-sm text-ink dark:text-paper truncate">{{ props.data.title }}</span>
       </div>
-      <span class="text-xs text-sage font-mono">{{ Math.round(props.data.progress * 100) }}%</span>
+      <div class="flex items-center gap-1.5">
+        <span class="text-xs text-sage font-mono">{{ Math.round(props.data.progress * 100) }}%</span>
+        <span v-if="props.data.overdue" class="inline-flex items-center gap-0.5 text-[10px] font-medium text-red-500">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="h-2.5 w-2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          {{ $t('stepNode.overdue') }}
+        </span>
+      </div>
     </div>
 
     <button

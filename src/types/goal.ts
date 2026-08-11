@@ -14,6 +14,7 @@ export interface Step {
   title: string
   description?: string
   status: StepStatus
+  dueDate?: string
   position?: { x: number; y: number }
   children: Step[]
   todos: Todo[]
@@ -26,5 +27,6 @@ export interface Goal {
   color?: string
   createdAt: string
   status: GoalStatus
+  dueDate?: string
   steps: Step[]
 }

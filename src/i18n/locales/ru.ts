@@ -16,6 +16,7 @@ export default {
     optional: '(необязательно)',
     descriptionPlaceholder: 'Пара слов о том, зачем эта цель',
     color: 'Цвет ветки',
+    dueDate: 'Дедлайн',
     submit: 'Создать цель',
     save: 'Сохранить',
   },
@@ -27,6 +28,7 @@ export default {
     searchPlaceholder: 'Поиск по названию...',
     filterActive: 'Активные',
     filterArchived: 'Архив',
+    dueDateLabel: 'Срок: {date}',
     empty: 'Пока нет ни одной цели — самое время добавить первую.',
     emptyArchived: 'В архиве пока пусто.',
     emptySearch: 'Ничего не найдено.',
@@ -49,6 +51,9 @@ export default {
     progress: '{done} из {total} выполнено',
     allDone: 'Все пункты закрыты — отметить шаг выполненным?',
     markDone: 'Отметить',
+    dueDate: 'Дедлайн',
+    dueOn: 'Срок: {date}',
+    overdue: 'Просрочено',
     addTodoPlaceholder: 'Добавить пункт...',
     add: 'Добавить',
     deleteStep: 'Удалить шаг',
@@ -58,6 +63,7 @@ export default {
   },
   stepTree: {
     empty: 'Пока нет ни одного шага — переключись на граф, чтобы добавить первый.',
+    overdue: 'Просрочено',
   },
   stepNode: {
     addChild: 'Добавить подшаг',
@@ -65,6 +71,15 @@ export default {
     menuOpen: 'Открыть',
     menuAddChild: 'Добавить подшаг',
     menuMarkDone: 'Отметить выполненным',
+    overdue: 'Просрочено',
+  },
+  dueDateMenu: {
+    set: 'Дедлайн',
+    goal: 'Дедлайн цели',
+    step: 'Дедлайн шага',
+  },
+  dueDateModal: {
+    save: 'Сохранить',
   },
   backup: {
     confirmReplaceTitle: 'Импорт бэкапа',
@@ -75,5 +90,10 @@ export default {
     pwa: {
     installPrompt: 'Установить как приложение',
     installAction: 'Установить',
+    updateAvailable: 'Вышла новая версия',
+    updateNow: 'Обновить',
+  },
+  notifications: {
+    toggle: 'Включить уведомления о дедлайнах',
   },
 }

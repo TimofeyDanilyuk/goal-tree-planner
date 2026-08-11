@@ -1,23 +1,25 @@
 import type { Goal, Step, Todo } from '../types/goal'
 
-export function createGoal(title: string, description?: string, color?: string): Goal {
+export function createGoal(title: string, description?: string, color?: string, dueDate?: string): Goal {
   return {
     id: crypto.randomUUID(),
     title,
     description,
     color,
+    dueDate,
     createdAt: new Date().toISOString(),
     status: 'active',
     steps: [],
   }
 }
 
-export function createStep(title: string, parentId: string | null = null): Step {
+export function createStep(title: string, parentId: string | null = null, dueDate?: string): Step {
   return {
     id: crypto.randomUUID(),
     parentId,
     title,
     status: 'todo',
+    dueDate,
     children: [],
     todos: [],
   }

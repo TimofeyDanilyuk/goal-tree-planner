@@ -1,14 +1,22 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useThemeStore } from '../stores/theme'
+import { useGoalsStore } from '../stores/goals'
+import { useNotifications } from '../composables/useNotifications'
 import ThemeToggle from './ThemeToggle.vue'
 import LocaleToggle from './LocaleToggle.vue'
+import NotificationToggle from './NotificationToggle.vue'
 
 const themeStore = useThemeStore()
+const goalsStore = useGoalsStore()
+const notifications = useNotifications()
 
 onMounted(() => {
   themeStore.apply()
+  notifications.startPolling()
 })
+
+goalsStore.init().then(() => notifications.checkDueDates())
 </script>
 
 <template>
@@ -19,6 +27,7 @@ onMounted(() => {
       </router-link>
 
       <div class="flex items-center gap-2">
+        <NotificationToggle />
         <LocaleToggle />
         <ThemeToggle />
       </div>

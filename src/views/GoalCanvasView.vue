@@ -23,12 +23,13 @@ function handleOpenStep(stepId: string) {
   openStepId.value = stepId
 }
 
-function handleEditSubmit(payload: { title: string; description: string; color: string }) {
+function handleEditSubmit(payload: { title: string; description: string; color: string; dueDate?: string }) {
   if (!goal.value) return
   goalsStore.updateGoal(goal.value.id, {
     title: payload.title,
     description: payload.description || undefined,
     color: payload.color,
+    dueDate: payload.dueDate,
   })
 }
 

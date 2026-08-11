@@ -4,6 +4,7 @@ import BaseModal from '../BaseModal.vue'
 import { useGoalsStore } from '../../stores/goals'
 import { findStepById } from '../../utils/tree'
 import { getStepProgress } from '../../utils/progress'
+import { isOverdue } from '../../utils/dueDate'
 import GrowthRing from '../GrowthRing.vue'
 import { confirmDialog } from '../../composables/useConfirm'
 import { useI18n } from 'vue-i18n'
@@ -33,6 +34,7 @@ const allTodosDone = computed(() =>
 
 const titleDraft = ref('')
 const descriptionDraft = ref('')
+const dueDateDraft = ref('')
 const newTodoText = ref('')
 const draggedTodoId = ref<string | null>(null)
 
@@ -40,6 +42,7 @@ const draggedTodoId = ref<string | null>(null)
 watch(step, (s) => {
   titleDraft.value = s?.title ?? ''
   descriptionDraft.value = s?.description ?? ''
+  dueDateDraft.value = s?.dueDate ?? ''
 }, { immediate: true })
 
 function saveTitle() {
@@ -50,6 +53,16 @@ function saveTitle() {
 function saveDescription() {
   if (!step.value) return
   goalsStore.updateStep(props.goalId, step.value.id, { description: descriptionDraft.value.trim() })
+}
+
+function saveDueDate() {
+  if (!step.value) return
+  goalsStore.updateStep(props.goalId, step.value.id, { dueDate: dueDateDraft.value || undefined })
+}
+
+function formatStepDue(dueDate: string): string {
+  const [yy, mm, dd] = dueDate.split('-').map(Number)
+  return new Date(yy, (mm ?? 1) - 1, dd ?? 1).toLocaleDateString()
 }
 
 function addTodo() {
@@ -124,6 +137,22 @@ function handleDrop(targetTodoId: string) {
         class="w-full text-sm bg-transparent border-b border-transparent focus:border-sage/40 focus:outline-none text-sage placeholder:text-sage/50 resize-none"
         @blur="saveDescription"
       />
+
+      <div class="flex items-center gap-2">
+        <label for="step-due" class="text-sm text-sage shrink-0">{{ $t('stepModal.dueDate') }}</label>
+        <input
+          id="step-due" v-model="dueDateDraft" type="date"
+          class="flex-1 min-w-0 h-10 px-3 rounded-xl border border-sage/30 bg-white dark:bg-dusk text-sm text-ink dark:text-paper focus:outline-none focus:ring-2 focus:ring-moss"
+          @change="saveDueDate"
+        >
+      </div>
+
+      <div v-if="step.dueDate" class="flex items-center gap-1.5 text-xs font-medium" :class="isOverdue(step.dueDate, step.status === 'done' ? 'done' : undefined) ? 'text-red-500' : 'text-sage'">
+        <svg v-if="isOverdue(step.dueDate, step.status === 'done' ? 'done' : undefined)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        {{ isOverdue(step.dueDate, step.status === 'done' ? 'done' : undefined) ? $t('stepModal.overdue') : $t('stepModal.dueOn', { date: formatStepDue(step.dueDate) }) }}
+      </div>
 
       <div class="flex items-center gap-3">
         <GrowthRing :progress="progress" :size="40" :stroke-width="3" :show-label="false" />

@@ -16,6 +16,7 @@ export default {
     optional: '(optional)',
     descriptionPlaceholder: 'A few words on why this goal matters',
     color: 'Branch color',
+    dueDate: 'Deadline',
     submit: 'Create Goal',
     save: 'Save',
   },
@@ -27,6 +28,7 @@ export default {
     searchPlaceholder: 'Search by title...',
     filterActive: 'Active',
     filterArchived: 'Archived',
+    dueDateLabel: 'Due: {date}',
     empty: 'No goals yet — this is a good time to add your first one.',
     emptyArchived: 'The archive is empty.',
     emptySearch: 'No matches found.',
@@ -49,6 +51,9 @@ export default {
     progress: '{done} of {total} done',
     allDone: 'All items checked off — mark this step as done?',
     markDone: 'Mark done',
+    dueDate: 'Deadline',
+    dueOn: 'Due: {date}',
+    overdue: 'Overdue',
     addTodoPlaceholder: 'Add an item...',
     add: 'Add',
     deleteStep: 'Delete step',
@@ -58,6 +63,7 @@ export default {
   },
   stepTree: {
     empty: 'No steps yet — switch to the graph view to add the first one.',
+    overdue: 'Overdue',
   },
   stepNode: {
     addChild: 'Add substep',
@@ -65,6 +71,15 @@ export default {
     menuOpen: 'Open',
     menuAddChild: 'Add substep',
     menuMarkDone: 'Mark as done',
+    overdue: 'Overdue',
+  },
+  dueDateMenu: {
+    set: 'Deadline',
+    goal: 'Goal deadline',
+    step: 'Step deadline',
+  },
+  dueDateModal: {
+    save: 'Save',
   },
   backup: {
     confirmReplaceTitle: 'Import backup',
@@ -75,5 +90,10 @@ export default {
     pwa: {
     installPrompt: 'Install as an app',
     installAction: 'Install',
+    updateAvailable: 'A new version is available',
+    updateNow: 'Update',
+  },
+  notifications: {
+    toggle: 'Enable deadline notifications',
   },
 }

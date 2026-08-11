@@ -4,10 +4,12 @@ const props = withDefaults(defineProps<{
   size?: number
   strokeWidth?: number
   showLabel?: boolean
+  color?: string
 }>(), {
   size: 48,
   strokeWidth: 4,
   showLabel: true,
+  color: undefined,
 })
 
 const clamped = Math.min(Math.max(props.progress, 0), 1)
@@ -28,7 +30,9 @@ const offset = circumference * (1 - clamped)
         :cx="size / 2" :cy="size / 2" :r="radius"
         fill="none" :stroke-width="strokeWidth"
         stroke="currentColor" stroke-linecap="round"
-        class="text-moss transition-[stroke-dashoffset] duration-500 ease-out"
+        class="transition-[stroke-dashoffset] duration-500 ease-out"
+        :class="color ? '' : 'text-moss'"
+        :style="color ? { color } : undefined"
         :stroke-dasharray="circumference"
         :stroke-dashoffset="offset"
       />

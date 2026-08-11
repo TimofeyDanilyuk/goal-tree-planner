@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useGoalsStore } from '../stores/goals'
 import { getGoalProgress } from '../utils/progress'
+import { sortGoalsByDueDate, isGoalOverdue } from '../utils/dueDate'
 import { confirmDialog, alertDialog } from '../composables/useConfirm'
 import GrowthRing from '../components/GrowthRing.vue'
 import GoalFormModal from '../components/modals/GoalFormModal.vue'
@@ -20,8 +21,8 @@ const statusFilter = ref<'active' | 'archived'>('active')
 const filteredGoals = computed(() => {
   const source = statusFilter.value === 'active' ? goalsStore.activeGoals : goalsStore.archivedGoals
   const query = search.value.trim().toLowerCase()
-  if (!query) return source
-  return source.filter(g => g.title.toLowerCase().includes(query))
+  const matches = query ? source.filter(g => g.title.toLowerCase().includes(query)) : [...source]
+  return sortGoalsByDueDate(matches)
 })
 
 const emptyMessage = computed(() => {
@@ -43,15 +44,21 @@ function openEditModal(goal: Goal) {
   isModalOpen.value = true
 }
 
-function handleSubmit(payload: { title: string; description: string; color: string }) {
+function formatDueDate(dueDate: string): string {
+  const [yy, mm, dd] = dueDate.split('-').map(Number)
+  return new Date(yy, (mm ?? 1) - 1, dd ?? 1).toLocaleDateString()
+}
+
+function handleSubmit(payload: { title: string; description: string; color: string; dueDate?: string }) {
   if (editingGoal.value) {
     goalsStore.updateGoal(editingGoal.value.id, {
       title: payload.title,
       description: payload.description || undefined,
       color: payload.color,
+      dueDate: payload.dueDate,
     })
   } else {
-    goalsStore.addGoal(payload.title, payload.description || undefined, payload.color)
+    goalsStore.addGoal(payload.title, payload.description || undefined, payload.color, payload.dueDate)
   }
 }
 
@@ -221,14 +228,27 @@ async function handleFileChange(event: Event) {
         @pointermove="cancelPress"
         @pointerleave="cancelPress"
       >
-        <GrowthRing :progress="getGoalProgress(goal)" :size="44" :stroke-width="3" />
-        <div class="min-w-0">
+        <GrowthRing
+          :progress="getGoalProgress(goal)" :size="44" :stroke-width="3"
+          :color="goal.color"
+        />
+        <div class="min-w-0 flex-1">
           <h2 class="font-display font-semibold text-ink dark:text-paper truncate">
             {{ goal.title }}
           </h2>
           <p v-if="goal.description" class="text-sm text-sage mt-0.5 line-clamp-2">
             {{ goal.description }}
           </p>
+          <span
+            v-if="goal.dueDate"
+            class="inline-flex items-center gap-1 text-xs mt-1.5 font-medium"
+            :class="isGoalOverdue(goal) ? 'text-red-500' : 'text-sage'"
+          >
+            <svg v-if="isGoalOverdue(goal)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3 w-3">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {{ $t('goalsList.dueDateLabel', { date: formatDueDate(goal.dueDate) }) }}
+          </span>
         </div>
       </div>
     </div>

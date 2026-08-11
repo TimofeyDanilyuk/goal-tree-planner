@@ -7,10 +7,12 @@ import { useI18n } from 'vue-i18n'
 import type { Goal, Step } from '../../types/goal'
 import { useGoalsStore } from '../../stores/goals'
 import { getStepProgress, getGoalProgress } from '../../utils/progress'
+import { isOverdue } from '../../utils/dueDate'
 import { layoutGoalTree } from '../../utils/treeLayout'
 import { findStepById } from '../../utils/tree'
 import StepNode from './StepNode.vue'
 import ContextMenu, { type MenuItem } from '../ContextMenu.vue'
+import DueDateModal from '../modals/DueDateModal.vue'
 
 import { confirmDialog } from '../../composables/useConfirm'
 
@@ -50,10 +52,26 @@ const activeStep = computed(() => {
   return findStepById(props.goal.steps, menuState.value.targetId)
 })
 
+const dueDateModal = ref(false)
+
+function openDueDate() {
+  closeContextMenu()
+  dueDateModal.value = true
+}
+
+function saveDueDate(dueDate?: string) {
+  if (menuState.value.isGoal) {
+    goalsStore.updateGoal(props.goal.id, { dueDate })
+  } else if (menuState.value.targetId) {
+    goalsStore.updateStep(props.goal.id, menuState.value.targetId, { dueDate })
+  }
+}
+
 const contextMenuItems = computed<MenuItem[]>(() => {
   if (menuState.value.isGoal) {
     return [
       { label: t('goalsList.menuEdit'), onClick: () => emit('edit-goal') },
+      { label: t('dueDateMenu.set'), onClick: openDueDate },
       {
         label: props.goal.status === 'archived' ? t('goalsList.menuUnarchive') : t('goalsList.menuArchive'),
         onClick: () => goalsStore.setGoalStatus(props.goal.id, props.goal.status === 'archived' ? 'active' : 'archived'),
@@ -81,6 +99,7 @@ const contextMenuItems = computed<MenuItem[]>(() => {
   const items: MenuItem[] = [
     { label: t('stepNode.menuOpen'), onClick: () => emit('open-step', step.id) },
     { label: t('stepNode.menuAddChild'), onClick: () => goalsStore.addStep(props.goal.id, t('stepNode.newStep'), step.id) },
+    { label: t('dueDateMenu.set'), onClick: openDueDate },
   ]
 
   if (step.status !== 'done') {
@@ -111,6 +130,8 @@ const nodes = computed(() => {
   const layoutMap = new Map(layout.map(l => [l.id, l]))
   const allSteps = flattenSteps(props.goal.steps)
 
+  const goalColor = props.goal.color
+
   const rootNode = {
     id: props.goal.id,
     type: 'step',
@@ -120,6 +141,9 @@ const nodes = computed(() => {
       progress: getGoalProgress(props.goal),
       status: 'in_progress' as const,
       isRoot: true,
+      color: goalColor,
+      dueDate: props.goal.dueDate,
+      overdue: isOverdue(props.goal.dueDate, props.goal.status === 'done' ? 'done' : undefined),
       onOpen: () => emit('edit-goal'),
       onAddChild: () => goalsStore.addStep(props.goal.id, t('stepNode.newStep')),
       onContextMenu: (x: number, y: number) => openContextMenu(props.goal.id, x, y, true),
@@ -134,6 +158,9 @@ const nodes = computed(() => {
       title: step.title,
       progress: getStepProgress(step),
       status: step.status,
+      color: goalColor,
+      dueDate: step.dueDate,
+      overdue: isOverdue(step.dueDate, step.status === 'done' ? 'done' : undefined),
       onOpen: () => emit('open-step', step.id),
       onAddChild: () => goalsStore.addStep(props.goal.id, t('stepNode.newStep'), step.id),
       onContextMenu: (x: number, y: number) => openContextMenu(step.id, x, y),
@@ -145,12 +172,13 @@ const nodes = computed(() => {
 
 const edges = computed(() => {
   const allSteps = flattenSteps(props.goal.steps)
+  const edgeColor = props.goal.color ?? 'var(--color-sage)'
   return allSteps.map(step => ({
     id: `e-${step.parentId ?? props.goal.id}-${step.id}`,
     source: step.parentId ?? props.goal.id,
     target: step.id,
     type: 'smoothstep',
-    style: { stroke: 'var(--color-sage)', strokeWidth: 2 },
+    style: { stroke: edgeColor, strokeWidth: 2 },
   }))
 })
 
@@ -188,6 +216,15 @@ function handleNodeDragStop({ node }: { node: { id: string; position: { x: numbe
       @close="closeContextMenu"
     />
   </div>
+
+  <DueDateModal
+    v-model="dueDateModal"
+    :title="menuState.isGoal ? t('dueDateMenu.goal') : t('dueDateMenu.step')"
+    :initial="menuState.isGoal
+      ? props.goal.dueDate
+      : (activeStep?.dueDate ?? undefined)"
+    @submit="saveDueDate"
+  />
 </template>
 
 <style scoped>

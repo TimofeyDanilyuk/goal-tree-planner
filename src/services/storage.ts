@@ -1,5 +1,5 @@
 import { openDB, type IDBPDatabase } from 'idb'
-import type { Goal } from '../types/goal'
+import type { Goal, Step } from '../types/goal'
 
 const DB_NAME = 'goal-tree-planner'
 const DB_VERSION = 1
@@ -27,7 +27,25 @@ function toPlain<T>(value: T): T {
 
 export async function loadGoals(): Promise<Goal[]> {
   const db = await getDb()
-  return db.getAll(STORE_NAME)
+  const goals = await db.getAll(STORE_NAME)
+  return goals.map(normalizeGoal)
+}
+
+function normalizeGoal(goal: Goal): Goal {
+  return {
+    ...goal,
+    dueDate: goal.dueDate ?? undefined,
+    steps: (goal.steps ?? []).map(normalizeStep),
+  }
+}
+
+function normalizeStep(step: Step): Step {
+  return {
+    ...step,
+    dueDate: step.dueDate ?? undefined,
+    children: (step.children ?? []).map(normalizeStep),
+    todos: step.todos ?? [],
+  }
 }
 
 export async function saveGoal(goal: Goal): Promise<void> {

@@ -35,14 +35,14 @@ export const useGoalsStore = defineStore('goals', {
       }, 400)
     },
 
-    addGoal(title: string, description?: string, color?: string) {
-      const goal = createGoal(title, description, color)
+    addGoal(title: string, description?: string, color?: string, dueDate?: string) {
+      const goal = createGoal(title, description, color, dueDate)
       this.goals.push(goal)
       storage.saveGoal(goal)
       return goal
     },
 
-    updateGoal(id: string, patch: Partial<Pick<Goal, 'title' | 'description' | 'color' | 'status'>>) {
+    updateGoal(id: string, patch: Partial<Pick<Goal, 'title' | 'description' | 'color' | 'status' | 'dueDate'>>) {
       const goal = findGoal(this.goals, id)
       if (!goal) return
       Object.assign(goal, patch)
@@ -58,10 +58,10 @@ export const useGoalsStore = defineStore('goals', {
       storage.deleteGoalFromDb(id)
     },
 
-    addStep(goalId: string, title: string, parentId: string | null = null) {
+    addStep(goalId: string, title: string, parentId: string | null = null, dueDate?: string) {
       const goal = findGoal(this.goals, goalId)
       if (!goal) return null
-      const step = createStep(title, parentId)
+      const step = createStep(title, parentId, dueDate)
       if (parentId === null) {
         goal.steps.push(step)
       } else {
@@ -73,7 +73,7 @@ export const useGoalsStore = defineStore('goals', {
       return step
     },
 
-    updateStep(goalId: string, stepId: string, patch: Partial<Pick<Step, 'title' | 'description' | 'status' | 'position'>>) {
+    updateStep(goalId: string, stepId: string, patch: Partial<Pick<Step, 'title' | 'description' | 'status' | 'position' | 'dueDate'>>) {
       const goal = findGoal(this.goals, goalId)
       if (!goal) return
       const step = findStepById(goal.steps, stepId)
