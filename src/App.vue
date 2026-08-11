@@ -6,6 +6,8 @@ import { usePwaUpdate, applyPwaUpdate } from './composables/usePwaUpdate'
 import AppHeader from './components/AppHeader.vue'
 import InstallPwaButton from './components/InstallPwaButton.vue'
 import ConfirmDialog from './components/ConfirmDialog.vue'
+import { watch } from 'vue'
+import { syncDueItems } from './composables/usePushSubscription'
 
 const goalsStore = useGoalsStore()
 const { t } = useI18n()
@@ -17,9 +19,16 @@ onMounted(() => {
   goalsStore.init()
 })
 
+watch(() => goalsStore.goals, () => {
+  if (localStorage.getItem('goal-tree:notifications') === 'on') {
+    syncDueItems()
+  }
+}, { deep: true })
+
 function applyUpdate() {
   applyPwaUpdate()
 }
+
 </script>
 
 <template>

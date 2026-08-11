@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useNotifications } from '../composables/useNotifications'
+import { subscribeToPush, unsubscribeFromPush } from '../composables/usePushSubscription'
 
 const { t } = useI18n()
 const notifications = useNotifications()
@@ -15,11 +16,14 @@ async function toggle() {
   if (enabled.value) {
     enabled.value = false
     localStorage.setItem('goal-tree:notifications', 'off')
+    await unsubscribeFromPush()
     return
   }
   const ok = await notifications.requestPermission()
-  enabled.value = ok
-  if (ok) localStorage.setItem('goal-tree:notifications', 'on')
+  if (!ok) return
+  await subscribeToPush()
+  enabled.value = true
+  localStorage.setItem('goal-tree:notifications', 'on')
 }
 
 onMounted(() => {
