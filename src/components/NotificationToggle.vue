@@ -9,7 +9,9 @@ const notifications = useNotifications()
 const enabled = ref(false)
 
 onMounted(() => {
-  if (notifications.permissionGranted.value) enabled.value = true
+  const saved = localStorage.getItem('goal-tree:notifications')
+  const granted = typeof Notification !== 'undefined' && Notification.permission === 'granted'
+  enabled.value = saved === 'on' && granted
 })
 
 async function toggle() {
@@ -25,11 +27,6 @@ async function toggle() {
   enabled.value = true
   localStorage.setItem('goal-tree:notifications', 'on')
 }
-
-onMounted(() => {
-  const saved = localStorage.getItem('goal-tree:notifications')
-  if (saved === 'on' && notifications.permissionGranted.value) enabled.value = true
-})
 </script>
 
 <template>
