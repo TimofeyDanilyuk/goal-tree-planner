@@ -157,5 +157,19 @@ export const useGoalsStore = defineStore('goals', {
       this.goals = Array.from(byId.values())
       await storage.replaceAllGoals(this.goals)
     },
+    resetStepPositions(goalId: string) {
+      const goal = findGoal(this.goals, goalId)
+      if (!goal) return
+
+      function clear(steps: Step[]) {
+        for (const step of steps) {
+          step.position = undefined
+          clear(step.children)
+        }
+      }
+
+      clear(goal.steps)
+      this.scheduleSave(goal)
+    },
   },
 })

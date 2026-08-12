@@ -45,6 +45,9 @@ export default {
     notFound: 'Цель не найдена.',
     graph: 'Граф',
     list: 'Список',
+    orientationVertical: 'Вертикальный граф',
+    orientationHorizontal: 'Горизонтальный граф',
+    alignGraph: 'Выровнять граф',
   },
   stepModal: {
     descriptionPlaceholder: 'Добавить описание...',

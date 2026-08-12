@@ -45,6 +45,9 @@ export default {
     notFound: 'Goal not found.',
     graph: 'Graph',
     list: 'List',
+    orientationVertical: 'Vertical graph',
+    orientationHorizontal: 'Horizontal graph',
+    alignGraph: 'Align graph',
   },
   stepModal: {
     descriptionPlaceholder: 'Add a description...',

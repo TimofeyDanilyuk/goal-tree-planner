@@ -6,22 +6,30 @@ interface LayoutResult {
   y: number
 }
 
-const NODE_SPACING = 240
-const LEVEL_HEIGHT = 170
+export type GraphOrientation = 'vertical' | 'horizontal'
 
-export function layoutGoalTree(goal: Goal): LayoutResult[] {
+const NODE_SPACING = 240
+const LEVEL_SPACING = 170
+
+export function layoutGoalTree(goal: Goal, orientation: GraphOrientation = 'vertical'): LayoutResult[] {
   const positions: LayoutResult[] = []
 
-  // ширина поддерева в "слотах" - нужна чтобы соседние ветки не накладывались
   function subtreeWidth(step: Step): number {
     if (step.children.length === 0) return 1
     return step.children.reduce((sum, c) => sum + subtreeWidth(c), 0)
   }
 
+  function toPoint(depth: number, crossSlot: number): { x: number; y: number } {
+    return orientation === 'vertical'
+      ? { x: crossSlot * NODE_SPACING, y: depth * LEVEL_SPACING }
+      : { x: depth * LEVEL_SPACING, y: crossSlot * NODE_SPACING }
+  }
+
   function place(step: Step, depth: number, leftSlot: number): number {
     const width = subtreeWidth(step)
     const centerSlot = leftSlot + width / 2
-    positions.push({ id: step.id, x: centerSlot * NODE_SPACING, y: depth * LEVEL_HEIGHT })
+    const point = toPoint(depth, centerSlot)
+    positions.push({ id: step.id, ...point })
 
     let cursor = leftSlot
     for (const child of step.children) {
@@ -31,7 +39,7 @@ export function layoutGoalTree(goal: Goal): LayoutResult[] {
   }
 
   const rootWidth = goal.steps.reduce((sum, s) => sum + subtreeWidth(s), 0)
-  positions.push({ id: goal.id, x: (rootWidth * NODE_SPACING) / 2, y: 0 })
+  positions.push({ id: goal.id, ...toPoint(0, rootWidth / 2) })
 
   let cursor = 0
   for (const step of goal.steps) {

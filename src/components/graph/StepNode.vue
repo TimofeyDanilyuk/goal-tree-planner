@@ -2,6 +2,7 @@
 import { Handle, Position, type NodeProps } from '@vue-flow/core'
 import { useI18n } from 'vue-i18n'
 import GrowthRing from '../GrowthRing.vue'
+import type { GraphOrientation } from '../../utils/treeLayout'
 
 interface StepNodeData {
   title: string
@@ -11,6 +12,7 @@ interface StepNodeData {
   color?: string
   dueDate?: string
   overdue?: boolean
+  orientation: GraphOrientation
   onOpen: () => void
   onAddChild: () => void
   onContextMenu?: (x: number, y: number) => void
@@ -25,15 +27,15 @@ const statusDot: Record<string, string> = {
   done: 'bg-moss',
 }
 
-// правый клик на десктопе
+const targetPosition = props.data.orientation === 'vertical' ? Position.Top : Position.Left
+const sourcePosition = props.data.orientation === 'vertical' ? Position.Bottom : Position.Right
+
 function handleContextMenu(event: MouseEvent) {
   if (!props.data.onContextMenu) return
   event.preventDefault()
   props.data.onContextMenu(event.clientX, event.clientY)
 }
 
-// на тач-экранах большинство браузеров тоже шлют contextmenu по долгому нажатию,
-// но держим свой таймер как резерв на случай если конкретный браузер этого не делает
 let pressTimer: ReturnType<typeof setTimeout> | null = null
 let longPressFired = false
 
@@ -53,8 +55,6 @@ function cancelPress() {
 }
 
 function handleClick() {
-  // после долгого нажатия гасим последующий клик - иначе на закрытие меню
-  // среагирует ещё и обычное открытие модалки
   if (longPressFired) {
     longPressFired = false
     return
@@ -75,7 +75,7 @@ function handleClick() {
     @pointermove="cancelPress"
     @pointerleave="cancelPress"
   >
-    <Handle type="target" :position="Position.Top" class="!bg-sage !w-2 !h-2 !border-0" />
+    <Handle type="target" :position="targetPosition" class="!bg-sage !w-2 !h-2 !border-0" />
 
     <GrowthRing :progress="props.data.progress" :size="36" :stroke-width="3" :show-label="false" :color="props.data.color" />
 
@@ -104,6 +104,6 @@ function handleClick() {
       +
     </button>
 
-    <Handle type="source" :position="Position.Bottom" class="!bg-sage !w-2 !h-2 !border-0" />
+    <Handle type="source" :position="sourcePosition" class="!bg-sage !w-2 !h-2 !border-0" />
   </div>
 </template>
