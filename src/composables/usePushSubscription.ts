@@ -1,8 +1,8 @@
 import { useGoalsStore } from '../stores/goals'
 import { daysUntil } from '../utils/dueDate'
 import type { Goal, Step } from '../types/goal'
+import { API_BASE } from '../config'
 
-const PUSH_WORKER_URL = 'https://goal-tree-push-worker.timofei-danilyuk.workers.dev'
 const VAPID_PUBLIC_KEY = 'BM0XiYBtH6TZqNfJW2_68RgMp-eV0YgNaFHly7Kv68AqmqRKhwZUKuj3nAtRp7bhgXrKJdmK_L41KtP9keAdCVo'
 
 function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
@@ -67,7 +67,7 @@ export async function unsubscribeFromPush(): Promise<void> {
   const subscription = await registration.pushManager.getSubscription()
   if (!subscription) return
 
-  await fetch(`${PUSH_WORKER_URL}/unsubscribe`, {
+  await fetch(`${API_BASE}/unsubscribe`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ subscription: subscription.toJSON() }),
@@ -85,7 +85,7 @@ export async function syncDueItems(subscriptionArg?: PushSubscription): Promise<
   const goalsStore = useGoalsStore()
   const items = collectDueItems(goalsStore.goals)
 
-  await fetch(`${PUSH_WORKER_URL}/subscribe`, {
+  await fetch(`${API_BASE}/subscribe`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ subscription: subscription.toJSON(), items }),

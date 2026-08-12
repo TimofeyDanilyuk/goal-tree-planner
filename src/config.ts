@@ -1,0 +1,1 @@
+export const API_BASE = 'https://goal-tree-push-worker.timofei-danilyuk.workers.dev'

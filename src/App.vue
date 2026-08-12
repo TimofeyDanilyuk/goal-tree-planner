@@ -1,34 +1,57 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useGoalsStore } from './stores/goals'
+import { useAuthStore } from './stores/auth'
 import { usePwaUpdate, applyPwaUpdate } from './composables/usePwaUpdate'
+import { syncDueItems } from './composables/usePushSubscription'
+import * as syncApi from './services/syncApi'
 import AppHeader from './components/AppHeader.vue'
 import InstallPwaButton from './components/InstallPwaButton.vue'
 import ConfirmDialog from './components/ConfirmDialog.vue'
-import { watch } from 'vue'
-import { syncDueItems } from './composables/usePushSubscription'
 
 const goalsStore = useGoalsStore()
+const authStore = useAuthStore()
 const { t } = useI18n()
 
 // предложение перезагрузить приложение, когда SW подхватил новую версию
 const { updateAvailable } = usePwaUpdate()
 
-onMounted(() => {
-  goalsStore.init()
+let pushTimeout: ReturnType<typeof setTimeout> | null = null
+
+onMounted(async () => {
+  await goalsStore.init()
+
+  // если только что вошли в аккаунт на устройстве, где локально пусто -
+  // подтягиваем данные с сервера автоматически
+  if (authStore.isAuthenticated && goalsStore.goals.length === 0) {
+    try {
+      const server = await syncApi.pullGoals()
+      if (server.goals.length > 0) {
+        await goalsStore.importBackup(JSON.stringify(server.goals), 'replace')
+      }
+    } catch {
+      // сервер недоступен - продолжаем офлайн с тем, что есть локально
+    }
+  }
 })
 
 watch(() => goalsStore.goals, () => {
   if (localStorage.getItem('goal-tree:notifications') === 'on') {
     syncDueItems()
   }
+
+  if (authStore.isAuthenticated) {
+    if (pushTimeout) clearTimeout(pushTimeout)
+    pushTimeout = setTimeout(() => {
+      syncApi.pushGoals(goalsStore.goals).catch(() => {})
+    }, 1500)
+  }
 }, { deep: true })
 
 function applyUpdate() {
   applyPwaUpdate()
 }
-
 </script>
 
 <template>

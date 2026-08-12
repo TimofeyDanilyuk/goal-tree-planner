@@ -32,6 +32,7 @@ self.addEventListener('push', (event) => {
     self.registration.showNotification(data.title, {
       body: data.body,
       icon: '/pwa-192x192.png',
+      badge: '/pwa-64x64.png',
       tag: data.tag ?? data.url,
       data: { url: data.url },
     })
@@ -40,15 +41,17 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
-  const url = (event.notification.data as { url?: string })?.url
+  const rawUrl = (event.notification.data as { url?: string })?.url ?? '/'
+  const targetUrl = new URL(rawUrl, self.registration.scope).href
+
   event.waitUntil(
     self.clients.matchAll({ type: 'window' }).then((clients) => {
-      if (clients.length > 0) {
-        const client = clients[0]
-        if (url) client.navigate(url)
-        return client.focus()
+      const existing = clients.find((c) => 'focus' in c)
+      if (existing) {
+        existing.navigate(targetUrl)
+        return existing.focus()
       }
-      return self.clients.openWindow(url ?? '/')
+      return self.clients.openWindow(targetUrl)
     })
   )
 })

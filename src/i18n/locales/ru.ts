@@ -96,4 +96,20 @@ export default {
   notifications: {
     toggle: 'Включить уведомления о дедлайнах',
   },
+    auth: {
+    login: 'Войти',
+    register: 'Регистрация',
+    loginTitle: 'Вход',
+    registerTitle: 'Создать аккаунт',
+    username: 'Логин',
+    password: 'Пароль',
+    loading: 'Подождите...',
+    logout: 'Выйти',
+    migrateTitle: 'Перенести данные',
+    migrateMessage: 'На этом устройстве уже есть локальные цели. Загрузить их в новый аккаунт?',
+    conflictTitle: 'Расхождение данных',
+    conflictMessage: 'На этом устройстве уже есть локальные цели, а в аккаунте могут быть свои. Что делать?',
+    useServerData: 'Взять из аккаунта',
+    keepLocalData: 'Оставить локальные',
+  },
 }

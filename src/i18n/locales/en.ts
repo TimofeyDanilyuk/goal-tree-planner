@@ -96,4 +96,20 @@ export default {
   notifications: {
     toggle: 'Enable deadline notifications',
   },
+    auth: {
+    login: 'Log in',
+    register: 'Sign up',
+    loginTitle: 'Log in',
+    registerTitle: 'Create account',
+    username: 'Username',
+    password: 'Password',
+    loading: 'Please wait...',
+    logout: 'Log out',
+    migrateTitle: 'Migrate data',
+    migrateMessage: 'This device already has local goals. Upload them to the new account?',
+    conflictTitle: 'Data conflict',
+    conflictMessage: 'This device already has local goals, and the account may have its own. What should we do?',
+    useServerData: 'Use account data',
+    keepLocalData: 'Keep local data',
+  },
 }
