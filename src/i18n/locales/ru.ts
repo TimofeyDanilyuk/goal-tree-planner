@@ -1,6 +1,6 @@
 export default {
   header: {
-    title: 'ЦелевичОк',
+    title: 'Goal Tree',
   },
     common: {
     confirm: 'Подтвердить',

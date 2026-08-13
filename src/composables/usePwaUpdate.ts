@@ -3,20 +3,16 @@ import { registerSW } from 'virtual:pwa-register'
 
 const updateAvailable = ref(false)
 
-let needsRefresh = false
-
-registerSW({
+const updateServiceWorker = registerSW({
   immediate: true,
   onRegisteredSW(swUrl, registration) {
-    registration?.update().catch(() => {})
     void swUrl
+    registration?.update().catch(() => {})
   },
   onNeedRefresh() {
-    needsRefresh = true
     updateAvailable.value = true
   },
-  onOfflineReady() {
-  },
+  onOfflineReady() {},
 })
 
 // независимая проверка версии в обход service worker -
@@ -27,23 +23,22 @@ export async function checkVersion(): Promise<void> {
     if (!res.ok) return
     const serverBuildId = (await res.text()).trim()
     if (serverBuildId && serverBuildId !== __APP_BUILD_ID__) {
-      needsRefresh = true
       updateAvailable.value = true
+      // форсируем сервис-воркер перепроверить свой скрипт -
+      // если реально есть новая версия sw.js, это запустит штатный onNeedRefresh
+      const reg = await navigator.serviceWorker.getRegistration()
+      await reg?.update()
     }
   } catch {
-    // сеть недоступна - молча пропускаем эту проверку
+    // сеть недоступна - пропускаем эту проверку
   }
 }
 
 export function usePwaUpdate() {
-  return {
-    updateAvailable,
-    needsRefresh,
-  }
+  return { updateAvailable }
 }
 
-export function applyPwaUpdate() {
-  needsRefresh = false
+export async function applyPwaUpdate() {
   updateAvailable.value = false
-  if (typeof window !== 'undefined') window.location.reload()
+  await updateServiceWorker(true)
 }

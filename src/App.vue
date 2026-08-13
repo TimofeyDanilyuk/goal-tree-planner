@@ -74,8 +74,8 @@ watch(() => goalsStore.goals, () => {
   }
 }, { deep: true })
 
-function applyUpdate() {
-  applyPwaUpdate()
+async function applyUpdate() {
+  await applyPwaUpdate()
 }
 </script>
 

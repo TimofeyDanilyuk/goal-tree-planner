@@ -4,10 +4,19 @@ import { registerRoute } from 'workbox-routing'
 import { StaleWhileRevalidate, CacheFirst } from 'workbox-strategies'
 import { ExpirationPlugin } from 'workbox-expiration'
 import { CacheableResponsePlugin } from 'workbox-cacheable-response'
+import { clientsClaim } from 'workbox-core'
 
 declare const self: ServiceWorkerGlobalScope
 
 precacheAndRoute(self.__WB_MANIFEST)
+
+clientsClaim()
+
+// без этого обработчика updateServiceWorker(true) из vite-plugin-pwa
+// не может активировать новую версию - "Обновить" не работал именно из-за этого
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting()
+})
 
 registerRoute(
   ({ url }) => url.origin === 'https://fonts.googleapis.com',
