@@ -2,7 +2,6 @@
 import { Handle, Position, type NodeProps } from '@vue-flow/core'
 import { useI18n } from 'vue-i18n'
 import GrowthRing from '../GrowthRing.vue'
-import type { GraphOrientation } from '../../utils/treeLayout'
 
 interface StepNodeData {
   title: string
@@ -12,7 +11,6 @@ interface StepNodeData {
   color?: string
   dueDate?: string
   overdue?: boolean
-  orientation: GraphOrientation
   onOpen: () => void
   onAddChild: () => void
   onContextMenu?: (x: number, y: number) => void
@@ -26,9 +24,6 @@ const statusDot: Record<string, string> = {
   in_progress: 'bg-ochre',
   done: 'bg-moss',
 }
-
-const targetPosition = props.data.orientation === 'vertical' ? Position.Top : Position.Left
-const sourcePosition = props.data.orientation === 'vertical' ? Position.Bottom : Position.Right
 
 function handleContextMenu(event: MouseEvent) {
   if (!props.data.onContextMenu) return
@@ -66,7 +61,7 @@ function handleClick() {
 <template>
   <div
     class="relative rounded-2xl border bg-white dark:bg-dusk-dim shadow-sm hover:shadow-md hover:border-moss/40 transition-all px-4 py-3 flex items-center gap-3 cursor-pointer select-none"
-    :class="props.data.isRoot ? 'border-ink/30 dark:border-paper/30 min-w-[220px]' : 'border-sage/25 min-w-[200px]'"
+    :class="props.data.isRoot ? 'border-ink/30 dark:border-paper/30 w-55' : 'border-sage/25 w-50'"
     :style="props.data.color && !props.data.isRoot ? { borderColor: props.data.color + '55' } : undefined"
     @click="handleClick"
     @contextmenu="handleContextMenu"
@@ -75,7 +70,7 @@ function handleClick() {
     @pointermove="cancelPress"
     @pointerleave="cancelPress"
   >
-    <Handle type="target" :position="targetPosition" class="!bg-sage !w-2 !h-2 !border-0" />
+    <Handle type="target" :position="Position.Left" class="bg-sage! w-2! h-2! border-0!" />
 
     <GrowthRing :progress="props.data.progress" :size="36" :stroke-width="3" :show-label="false" :color="props.data.color" />
 
@@ -104,6 +99,6 @@ function handleClick() {
       +
     </button>
 
-    <Handle type="source" :position="sourcePosition" class="!bg-sage !w-2 !h-2 !border-0" />
+    <Handle type="source" :position="Position.Right" class="bg-sage! w-2! h-2! border-0!" />
   </div>
 </template>

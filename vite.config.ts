@@ -2,15 +2,37 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import type { Plugin } from 'vite'
+import { writeFileSync } from 'node:fs'
 
 const isCloudflare = !!process.env.CF_PAGES
 const base = isCloudflare ? '/' : '/goal-tree-planner/'
 
+// метка текущей сборки - используется для явной проверки версии на клиенте,
+// в обход капризного жизненного цикла service worker (особенно на iOS)
+const buildId = String(Date.now())
+
+// пишем ту же метку в dist/version.txt при каждой сборке -
+// клиент периодически сверяет её со своей вшитой версией
+function writeVersionFile(): Plugin {
+  return {
+    name: 'write-version-file',
+    apply: 'build',
+    closeBundle() {
+      writeFileSync('dist/version.txt', buildId)
+    },
+  }
+}
+
 export default defineConfig({
   base,
+  define: {
+    __APP_BUILD_ID__: JSON.stringify(buildId),
+  },
   plugins: [
     vue(),
     tailwindcss(),
+    writeVersionFile(),
     VitePWA({
       strategies: 'injectManifest',
       srcDir: 'src',

@@ -7,6 +7,16 @@ interface AuthResponse {
   username: string
 }
 
+const LAST_SYNC_KEY = 'goal-tree:last-sync-at'
+
+export function getLastSyncedAt(): string | null {
+  return localStorage.getItem(LAST_SYNC_KEY)
+}
+
+export function setLastSyncedAt(value: string) {
+  localStorage.setItem(LAST_SYNC_KEY, value)
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const authStore = useAuthStore()
   const headers: Record<string, string> = {
@@ -36,5 +46,7 @@ export async function pullGoals(): Promise<{ goals: unknown[]; updatedAt: string
 }
 
 export async function pushGoals(goals: unknown[]): Promise<{ ok: true; updatedAt: string }> {
-  return request('/sync', { method: 'PUT', body: JSON.stringify({ goals }) })
+  const res = await request<{ ok: true; updatedAt: string }>('/sync', { method: 'PUT', body: JSON.stringify({ goals }) })
+  setLastSyncedAt(res.updatedAt)
+  return res
 }

@@ -8,7 +8,7 @@ import type { Goal, Step } from '../../types/goal'
 import { useGoalsStore } from '../../stores/goals'
 import { getStepProgress, getGoalProgress } from '../../utils/progress'
 import { isOverdue } from '../../utils/dueDate'
-import { layoutGoalTree, type GraphOrientation } from '../../utils/treeLayout'
+import { layoutGoalTree } from '../../utils/treeLayout'
 import { findStepById } from '../../utils/tree'
 import StepNode from './StepNode.vue'
 import ContextMenu, { type MenuItem } from '../ContextMenu.vue'
@@ -30,35 +30,13 @@ const emit = defineEmits<{
 const goalsStore = useGoalsStore()
 const { t } = useI18n()
 const nodeTypes = { step: markRaw(StepNode) }
-const { fitView, setNodes } = useVueFlow()
-
-const ORIENTATION_KEY = 'goal-tree:graph-orientation'
-const orientation = ref<GraphOrientation>(
-  (localStorage.getItem(ORIENTATION_KEY) as GraphOrientation | null) ?? 'vertical'
-)
-
-function setOrientation(value: GraphOrientation) {
-  orientation.value = value
-  localStorage.setItem(ORIENTATION_KEY, value)
-}
-
-async function applyLayout() {
-  await nextTick()
-  setNodes(nodes.value)
-  await nextTick()
-  fitView({ padding: 0.2, duration: 300 })
-}
+const { fitView, setNodes, setEdges } = useVueFlow()
 
 async function alignGraph() {
   goalsStore.resetStepPositions(props.goal.id)
-  await applyLayout()
+  await nextTick()
+  fitView({ padding: 0.2, duration: 300 })
 }
-
-// смена ориентации сама по себе не двигает уже отрисованные узлы -
-// Vue Flow после первого рендера сам владеет позициями, нужно явно их пере-синхронизировать
-watch(orientation, () => {
-  applyLayout()
-})
 
 function flattenSteps(steps: Step[]): Step[] {
   return steps.flatMap(s => [s, ...flattenSteps(s.children)])
@@ -155,7 +133,7 @@ const contextMenuItems = computed<MenuItem[]>(() => {
 })
 
 const nodes = computed(() => {
-  const layout = layoutGoalTree(props.goal, orientation.value)
+  const layout = layoutGoalTree(props.goal)
   const layoutMap = new Map(layout.map(l => [l.id, l]))
   const allSteps = flattenSteps(props.goal.steps)
 
@@ -173,7 +151,6 @@ const nodes = computed(() => {
       color: goalColor,
       dueDate: props.goal.dueDate,
       overdue: isOverdue(props.goal.dueDate, props.goal.status === 'done' ? 'done' : undefined),
-      orientation: orientation.value,
       onOpen: () => emit('edit-goal'),
       onAddChild: () => goalsStore.addStep(props.goal.id, t('stepNode.newStep')),
       onContextMenu: (x: number, y: number) => openContextMenu(props.goal.id, x, y, true),
@@ -191,7 +168,6 @@ const nodes = computed(() => {
       color: goalColor,
       dueDate: step.dueDate,
       overdue: isOverdue(step.dueDate, step.status === 'done' ? 'done' : undefined),
-      orientation: orientation.value,
       onOpen: () => emit('open-step', step.id),
       onAddChild: () => goalsStore.addStep(props.goal.id, t('stepNode.newStep'), step.id),
       onContextMenu: (x: number, y: number) => openContextMenu(step.id, x, y),
@@ -213,6 +189,9 @@ const edges = computed(() => {
   }))
 })
 
+watch(nodes, (val) => setNodes(val))
+watch(edges, (val) => setEdges(val))
+
 function handleNodeDragStop({ node }: { node: { id: string; position: { x: number; y: number } } }) {
   if (node.id === props.goal.id) return
   goalsStore.updateStep(props.goal.id, node.id, { position: node.position })
@@ -220,7 +199,10 @@ function handleNodeDragStop({ node }: { node: { id: string; position: { x: numbe
 </script>
 
 <template>
-  <div class="relative h-[70vh] h-[70dvh] min-h-[420px] rounded-2xl border border-sage/20 overflow-hidden bg-paper-dim/40 dark:bg-dusk-dim/40">
+  <div
+    class="relative min-h-105 rounded-2xl border border-sage/20 overflow-hidden bg-paper-dim/40 dark:bg-dusk-dim/40"
+    style="height: 70vh; height: 70dvh"
+  >
     <VueFlow
       :nodes="nodes"
       :edges="edges"
@@ -239,44 +221,17 @@ function handleNodeDragStop({ node }: { node: { id: string; position: { x: numbe
       <Controls />
     </VueFlow>
 
-    <div class="absolute top-3 right-3 z-10 flex items-center gap-1.5">
-      <div class="flex rounded-full border border-sage/25 bg-white dark:bg-dusk-dim p-0.5 shadow-sm">
-        <button
-          type="button"
-          :aria-label="t('goalCanvas.orientationVertical')"
-          class="h-9 w-9 rounded-full flex items-center justify-center transition"
-          :class="orientation === 'vertical' ? 'bg-moss text-paper' : 'text-sage hover:bg-sage/10'"
-          @click="setOrientation('vertical')"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m0-16l-4 4m4-4l4 4m-4 12l-4-4m4 4l4-4" />
-          </svg>
-        </button>
-        <button
-          type="button"
-          :aria-label="t('goalCanvas.orientationHorizontal')"
-          class="h-9 w-9 rounded-full flex items-center justify-center transition"
-          :class="orientation === 'horizontal' ? 'bg-moss text-paper' : 'text-sage hover:bg-sage/10'"
-          @click="setOrientation('horizontal')"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 12h16m-16 0l4-4m-4 4l4 4m12-4l-4-4m4 4l-4 4" />
-          </svg>
-        </button>
-      </div>
-
-      <button
-        type="button"
-        :aria-label="t('goalCanvas.alignGraph')"
-        :title="t('goalCanvas.alignGraph')"
-        class="h-9 w-9 rounded-full flex items-center justify-center bg-white dark:bg-dusk-dim border border-sage/25 text-sage hover:bg-sage/10 hover:text-ink dark:hover:text-paper shadow-sm transition"
-        @click="alignGraph"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h10M4 18h16" />
-        </svg>
-      </button>
-    </div>
+    <button
+      type="button"
+      :aria-label="t('goalCanvas.alignGraph')"
+      :title="t('goalCanvas.alignGraph')"
+      class="absolute top-3 right-3 z-10 h-9 w-9 rounded-full flex items-center justify-center bg-white dark:bg-dusk-dim border border-sage/25 text-sage hover:bg-sage/10 hover:text-ink dark:hover:text-paper shadow-sm transition"
+      @click="alignGraph"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h10M4 18h16" />
+      </svg>
+    </button>
 
     <ContextMenu
       :visible="menuState.visible"

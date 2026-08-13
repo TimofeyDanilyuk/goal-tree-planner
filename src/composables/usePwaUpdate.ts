@@ -19,6 +19,22 @@ registerSW({
   },
 })
 
+// независимая проверка версии в обход service worker -
+// iOS не всегда вовремя дёргает update() у самого SW, поэтому подстраховываемся отдельно
+export async function checkVersion(): Promise<void> {
+  try {
+    const res = await fetch(`${import.meta.env.BASE_URL}version.txt`, { cache: 'no-store' })
+    if (!res.ok) return
+    const serverBuildId = (await res.text()).trim()
+    if (serverBuildId && serverBuildId !== __APP_BUILD_ID__) {
+      needsRefresh = true
+      updateAvailable.value = true
+    }
+  } catch {
+    // сеть недоступна - молча пропускаем эту проверку
+  }
+}
+
 export function usePwaUpdate() {
   return {
     updateAvailable,
